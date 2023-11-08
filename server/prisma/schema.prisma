@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id     String  @id @default(uuid())
+  role   Role    @default(ADMIN)
+  active Boolean @default(false)
+
+  profile    Profile?
+  classrooms Classroom[]
+  activities Activity[]
+  profileId  String?
+}
+
+model Teacher {
+  id     String  @id @default(uuid())
+  role   Role    @default(TEACHER)
+  active Boolean @default(true)
+
+  profile    Profile?
+  classrooms Classroom[]
+  activities Activity[]
+}
+
+model Student {
+  id     String  @id @default(uuid())
+  role   Role    @default(STUDENT)
+  active Boolean @default(false)
+
+  profile         Profile?
+  studentActivity StudentActivity[]
+  classrooms      Classroom[]       @relation("StudentClassroom")
+}
+
+model Profile {
+  firstName          String
+  middleName         String?
+  lastName           String
+  email              String?   @unique
+  username           String?   @unique
+  loginCode          String?   @unique
+  confirmLoginCode   String?   @unique
+  password           String?
+  newPassword        String?
+  confirmNewPassword String?
+  gender             String?
+  birthdate          DateTime?
+  address            String?
+
+  adminId   String?  @unique
+  admin     Admin?   @relation(fields: [adminId], references: [id])
+  teacherId String?  @unique
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  studentId String?  @unique
+  student   Student? @relation(fields: [studentId], references: [id])
+
+  @@unique([firstName, lastName])
+}
+
+model Classroom {
+  id        String         @id @default(uuid())
+  name      String
+  category  Class_Category
+  teacher   Teacher        @relation(fields: [teacherId], references: [id])
+  teacherId String
+  student   Student[]      @relation("StudentClassroom")
+  admin     Admin?         @relation(fields: [adminId], references: [id])
+  adminId   String?
+}
+
+model Activity {
+  id              String            @id @default(uuid())
+  title           String
+  description     String
+  assets          String[]
+  correctAnswer   String?
+  category        Act_Category
+  studentActivity StudentActivity[]
+  teacher         Teacher?          @relation(fields: [teacherId], references: [id])
+  teacherId       String?
+  admin           Admin?            @relation(fields: [adminId], references: [id])
+  adminId         String?
+}
+
+model StudentActivity {
+  id                  String    @id @default(uuid())
+  title               String
+  description         String
+  assets              String[]
+  correctAnswer       String?
+  student             Student   @relation(fields: [studentId], references: [id])
+  studentId           String
+  activity            Activity  @relation(fields: [activityId], references: [id])
+  activityId          String
+  submissionTimestamp DateTime?
+  score               String?
+  feedback            String?
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum Act_Category {
+  ENGLISH
+  MATH
+  SCIENCE
+}
+
+// model Act_Type {
+//   id       String     @id @default(uuid())
+//   name     String
+//   Activity Activity[]
+// }
+
+enum Class_Category {
+  ENGLISH_CLASS
+  MATH_CLASS
+  SCIENCE_CLASS
+}
